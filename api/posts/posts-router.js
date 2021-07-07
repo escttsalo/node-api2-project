@@ -28,7 +28,7 @@ router.get('/:id', async (req,res) => {
         }
 });
 
-router.post('/', async (req,res) => {
+router.post('/', (req,res) => {
     const { title, contents } = req.body
     if (!title || !contents ){
         res.status(400).json({
@@ -51,6 +51,59 @@ router.post('/', async (req,res) => {
     }
 });
 
+router.put('/:id', (req, res) => {
+    const { title, contents } = req.body
+    if (!title || !contents ) {
+        res.status(400).json({
+            message: 'Provide title and contents'
+        })
+    } else {
+        Post.findById(req.params.id)
+            .then(posts => {
+                if (!posts) {
+                    res.status(404).json({
+                        message: `Post with ID ${req.params.id} does not exist`
+                    })
+                } else {
+                    return Post.update(req.params.id, req.body)
+                }
+            })
+            .then(data => {
+                if (data) {
+                    return Post.findById(req.params.id)
+                }
+            })
+            .then(post => {
+                if (post) {
+                    res.json(post)
+                }
+            })
+            .catch(err => {
+                res.status(500).json({
+                    message: 'The post could not be updated',
+                    error: err.message,
+                })
+            })
+    }
+})
 
+router.delete('/:id', async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id)
+        if (!post) {
+            res.status(404).json({
+                message: `The post with ID ${req.params.id} does not exist`
+            })
+        } else {
+            await Post.remove(req.params.id)
+            res.json(post)
+        }
+    } catch (err) {
+        res.status(500).json({
+            message: 'Post could not be deleted',
+            error: err.message,
+        })
+    }
+})
 
 module.exports = router;
